@@ -178,4 +178,9 @@ Agents use three modalities — often in combination:
 - **Screenshots** — vision model identifies elements by position, color, and size. Used to cross-reference structure with visual layout.
 
 AgentReady checks all three channels to surface gaps that only appear when one modality is missing signal the others provide.
-# AgentReady
+
+---
+
+## Inspiration
+
+This script was inspired by [Designing for AI agents: UX considerations for the agentic web](https://web.dev/articles/ai-agent-site-ux) on web.dev.

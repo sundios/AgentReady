@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentReady Report — {{ result.url }}</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #f5f5f7; color: #1d1d1f; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* Header */
+  .header { background: #fff; border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+  .header-text { flex: 1; min-width: 200px; }
+  .header-text h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; color: #6e6e73; margin-bottom: 4px; }
+  .header-text .url { font-size: 1rem; color: #1d1d1f; word-break: break-all; }
+  .header-text .meta { font-size: 0.8rem; color: #6e6e73; margin-top: 6px; }
+
+  /* Score ring */
+  .score-ring { flex-shrink: 0; text-align: center; }
+  .ring-wrap { position: relative; width: 120px; height: 120px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: #e8e8ed; stroke-width: 10; }
+  .ring-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .ring-label .score-num { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+  .ring-label .score-grade { font-size: 0.8rem; color: #6e6e73; font-weight: 600; }
+
+  .grade-A { color: #30d158; } .grade-B { color: #34c759; } .grade-C { color: #ff9f0a; }
+  .grade-D { color: #ff6b35; } .grade-F { color: #ff3b30; }
+  .stroke-A { stroke: #30d158; } .stroke-B { stroke: #34c759; } .stroke-C { stroke: #ff9f0a; }
+  .stroke-D { stroke: #ff6b35; } .stroke-F { stroke: #ff3b30; }
+
+  /* Category grid */
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #1d1d1f; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .cat-card { background: #fff; border-radius: 12px; padding: 18px 18px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .cat-card .cat-name { font-size: 0.78rem; font-weight: 600; color: #6e6e73; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+  .cat-card .cat-score { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+  .cat-card .cat-max { font-size: 0.75rem; color: #6e6e73; }
+  .bar-wrap { height: 4px; background: #e8e8ed; border-radius: 2px; overflow: hidden; margin-top: 10px; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  /* Issues */
+  .issues-wrap { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .issue-row { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid #f2f2f7; }
+  .issue-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .badge-critical { background: #ffd6d6; color: #c0392b; }
+  .badge-high { background: #ffe8cc; color: #c0692b; }
+  .badge-medium { background: #fff3cc; color: #8a6800; }
+  .badge-low { background: #e0f0e0; color: #2d7a3a; }
+  .issue-body { flex: 1; }
+  .issue-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+  .issue-desc { font-size: 0.82rem; color: #6e6e73; line-height: 1.5; }
+  .issue-cat { font-size: 0.72rem; color: #9e9ea6; margin-top: 4px; }
+
+  /* Recommendations */
+  .recs-wrap { margin-bottom: 24px; }
+  .rec-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .rec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .rec-title { font-size: 0.92rem; font-weight: 600; flex: 1; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; background: #f2f2f7; color: #48484a; }
+  .rec-fix { font-size: 0.85rem; color: #3a3a3c; line-height: 1.6; margin-bottom: 12px; }
+  .rec-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .meta-pill { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; background: #f2f2f7; color: #6e6e73; }
+  .meta-pill strong { color: #1d1d1f; }
+  pre.code-example { background: #1c1c1e; color: #e5e5ea; border-radius: 8px; padding: 14px 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+
+  /* Screenshot */
+  .screenshot-wrap { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .screenshot-wrap img { width: 100%; border-radius: 8px; border: 1px solid #e8e8ed; }
+
+  /* Footer */
+  .footer { text-align: center; font-size: 0.78rem; color: #9e9ea6; margin-top: 32px; }
+  .no-issues { color: #30d158; font-size: 0.9rem; padding: 16px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-text">
+      <h1>AgentReady Audit Report</h1>
+      <div class="url">{{ result.url }}</div>
+      <div class="meta">{{ result.timestamp[:19].replace('T', ' ') }} UTC &nbsp;·&nbsp; Page: {{ page_title or 'Unknown' }}</div>
+    </div>
+    <div class="score-ring">
+      {% set score = result.overall_score %}
+      {% set grade = result.grade %}
+      {% set circ = 339.292 %}
+      {% set offset = circ * (1 - score / 100) %}
+      <div class="ring-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="54"/>
+          <circle class="ring-fill stroke-{{ grade }}" cx="60" cy="60" r="54"
+            stroke-dasharray="{{ circ }}"
+            stroke-dashoffset="{{ offset }}" />
+        </svg>
+        <div class="ring-label">
+          <div class="score-num grade-{{ grade }}">{{ score|int }}</div>
+          <div class="score-grade">/ 100 &nbsp; {{ grade }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Cards -->
+  <div class="section-title">Score Breakdown</div>
+  <div class="cat-grid">
+    {% for cat in result.categories %}
+    {% set pct = (cat.score / cat.max_score * 100)|int %}
+    {% set color = '#30d158' if pct >= 80 else ('#ff9f0a' if pct >= 50 else '#ff3b30') %}
+    <div class="cat-card">
+      <div class="cat-name">{{ cat.category }}</div>
+      <div class="cat-score" style="color: {{ color }}">{{ cat.score|int }}</div>
+      <div class="cat-max">out of {{ cat.max_score|int }} · {{ cat.passed_checks }}/{{ cat.total_checks }} checks passed</div>
+      <div class="bar-wrap">
+        <div class="bar-fill" style="width: {{ pct }}%; background: {{ color }};"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Issues -->
+  {% set all_issues = [] %}
+  {% for cat in result.categories %}
+    {% for issue in cat.issues %}
+      {% set _ = all_issues.append({'cat': cat.category, 'issue': issue}) %}
+    {% endfor %}
+  {% endfor %}
+
+  <div class="issues-wrap">
+    <div class="section-title">Issues Found ({{ all_issues|length }})</div>
+    {% if all_issues %}
+      {% for item in all_issues %}
+      <div class="issue-row">
+        <span class="badge badge-{{ item.issue.severity }}">{{ item.issue.severity }}</span>
+        <div class="issue-body">
+          <div class="issue-title">{{ item.issue.title }}</div>
+          <div class="issue-desc">{{ item.issue.description }}</div>
+          <div class="issue-cat">{{ item.cat }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="no-issues">✓ All checks passed — this page is highly agent-ready!</div>
+    {% endif %}
+  </div>
+
+  <!-- Recommendations -->
+  {% if result.recommendations %}
+  <div class="section-title">AI Recommendations</div>
+  <div class="recs-wrap">
+    {% for rec in result.recommendations %}
+    <div class="rec-card">
+      <div class="rec-header">
+        <span class="badge badge-{{ rec.severity }}">{{ rec.severity }}</span>
+        <div class="rec-title">{{ rec.issue }}</div>
+        <span class="tag">{{ rec.category }}</span>
+      </div>
+      <div class="rec-fix">{{ rec.fix }}</div>
+      <div class="rec-meta">
+        <span class="meta-pill"><strong>CRO Impact:</strong> {{ rec.cro_impact }}</span>
+        <span class="meta-pill"><strong>Effort:</strong> {{ rec.effort }}</span>
+      </div>
+      {% if rec.code_example %}
+      <pre class="code-example">{{ rec.code_example }}</pre>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Screenshot -->
+  {% if result.screenshot_b64 %}
+  <div class="screenshot-wrap">
+    <div class="section-title" style="margin-bottom: 14px;">Page Screenshot</div>
+    <img src="data:image/jpeg;base64,{{ result.screenshot_b64 }}" alt="Screenshot of audited page" />
+  </div>
+  {% endif %}
+
+  <div class="footer">Generated by AgentReady v1.0 · AI Agent-Readiness Auditor</div>
+</div>
+</body>
+</html>
