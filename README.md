@@ -6,8 +6,8 @@ Audit any URL and score how well it works for AI agents (browser-use, Claude com
 python3 main.py audit https://yoursite.com
 ```
 
-![AgentReady screenshot 1](screenshots/image1.png)
-![AgentReady screenshot 2](screenshots/image2.png)
+![AgentReady screenshot 1](/image1.png)
+![AgentReady screenshot 2](/image2.png)
 
 ---
 
