@@ -24,6 +24,8 @@ venv/
 # Reports & output
 reports/
 screenshots/
+!screenshots/image1.png
+!screenshots/image2.png
 
 # macOS
 .DS_Store
